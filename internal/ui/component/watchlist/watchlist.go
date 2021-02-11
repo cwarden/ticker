@@ -161,10 +161,23 @@ func extraInfoFundamentals(show bool, q Quote, width int) string {
 		return ""
 	}
 
+	dividendDate := "N/A"
+	if !q.DividendDate.IsZero() {
+		dividendDate = q.DividendDate.UTC().Format("2006-01-02")
+	}
+
 	return "\n" + Line(
 		width,
 		Cell{
 			Width: 25,
+			Text:  StyleNeutralFaded("Dividend: ") + StyleNeutral(ConvertFloatToString(q.AnnualDividend)+" ("+ConvertFloatToString(100*q.DividendYield)+"%)"),
+		},
+		Cell{
+			Width: 26,
+			Text:  StyleNeutralFaded("Dividend Date: ") + StyleNeutral(dividendDate),
+		},
+		Cell{
+			Width: 15,
 			Text:  StyleNeutralFaded("P/E: ") + StyleNeutral(ConvertFloatToString(q.TrailingPE)),
 		},
 		Cell{

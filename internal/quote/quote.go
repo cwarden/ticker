@@ -3,6 +3,7 @@ package quote
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -28,6 +29,9 @@ type ResponseQuote struct {
 	PreMarketPrice             float64 `json:"preMarketPrice"`
 	PriceToBook                float64 `json:"priceToBook"`
 	TrailingPE                 float64 `json:"trailingPE"`
+	DividendDate               int64   `json:"dividendDate"`
+	AnnualDividend             float64 `json:"trailingAnnualDividendRate"`
+	DividendYield              float64 `json:"trailingAnnualDividendYield"`
 }
 
 type Quote struct {
@@ -37,6 +41,7 @@ type Quote struct {
 	ChangePercent           float64
 	IsActive                bool
 	IsRegularTradingSession bool
+	DividendDate            time.Time
 }
 
 type Response struct {
@@ -47,41 +52,7 @@ type Response struct {
 }
 
 func transformResponseQuote(responseQuote ResponseQuote) Quote {
-
-	if responseQuote.MarketState == "REGULAR" {
-		return Quote{
-			ResponseQuote:           responseQuote,
-			Price:                   responseQuote.RegularMarketPrice,
-			Change:                  responseQuote.RegularMarketChange,
-			ChangePercent:           responseQuote.RegularMarketChangePercent,
-			IsActive:                true,
-			IsRegularTradingSession: true,
-		}
-	}
-
-	if responseQuote.MarketState == "POST" {
-		return Quote{
-			ResponseQuote:           responseQuote,
-			Price:                   responseQuote.PostMarketPrice,
-			Change:                  responseQuote.PostMarketChange + responseQuote.RegularMarketChange,
-			ChangePercent:           responseQuote.PostMarketChangePercent + responseQuote.RegularMarketChangePercent,
-			IsActive:                true,
-			IsRegularTradingSession: false,
-		}
-	}
-
-	if responseQuote.MarketState == "PRE" {
-		return Quote{
-			ResponseQuote:           responseQuote,
-			Price:                   responseQuote.PreMarketPrice,
-			Change:                  responseQuote.PreMarketChange,
-			ChangePercent:           responseQuote.PreMarketChangePercent,
-			IsActive:                true,
-			IsRegularTradingSession: false,
-		}
-	}
-
-	return Quote{
+	q := Quote{
 		ResponseQuote:           responseQuote,
 		Price:                   responseQuote.RegularMarketPrice,
 		Change:                  0.0,
@@ -89,7 +60,31 @@ func transformResponseQuote(responseQuote ResponseQuote) Quote {
 		IsActive:                false,
 		IsRegularTradingSession: false,
 	}
+	if responseQuote.DividendDate != 0 {
+		q.DividendDate = time.Unix(responseQuote.DividendDate, 0)
+	}
 
+	if responseQuote.MarketState == "REGULAR" {
+		q.Change = responseQuote.RegularMarketChange
+		q.ChangePercent = responseQuote.RegularMarketChangePercent
+		q.IsActive = true
+		q.IsRegularTradingSession = true
+	}
+
+	if responseQuote.MarketState == "POST" {
+		q.Price = responseQuote.PostMarketPrice
+		q.Change = responseQuote.PostMarketChange + responseQuote.RegularMarketChange
+		q.ChangePercent = responseQuote.PostMarketChangePercent + responseQuote.RegularMarketChangePercent
+		q.IsActive = true
+	}
+
+	if responseQuote.MarketState == "PRE" {
+		q.Price = responseQuote.PreMarketPrice
+		q.Change = responseQuote.PreMarketChange
+		q.ChangePercent = responseQuote.PreMarketChangePercent
+		q.IsActive = true
+	}
+	return q
 }
 
 func transformResponseQuotes(responseQuotes []ResponseQuote) []Quote {

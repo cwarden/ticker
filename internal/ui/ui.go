@@ -100,6 +100,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		"c": "change",
 		"e": "pe",
 		"p": "value",
+		"d": "dividend-date",
+		"y": "dividend-yield",
 		"b": "pb",
 	}
 
@@ -107,7 +109,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "t", "c", "e", "b", "p":
+		case "t", "c", "e", "b", "p", "d", "y":
 			m.watchlist.Sorter = sorter.NewSorter(sorters[msg.String()])
 			m.viewport.SetContent(m.watchlist.View())
 		case "r":

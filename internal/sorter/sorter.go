@@ -33,11 +33,13 @@ func (s Sorter) Sort(quotes []Quote, positions map[string]Position) []Quote {
 }
 
 var sortDict = map[string]sortFunction{
-	"alpha":  sortByTicker,
-	"value":  sortByValue,
-	"change": sortByChange,
-	"pe":     sortByPriceToEarnings,
-	"pb":     sortByPriceToBook,
+	"alpha":          sortByTicker,
+	"value":          sortByValue,
+	"change":         sortByChange,
+	"dividend-date":  sortByDividendDate,
+	"dividend-yield": sortByDividendYield,
+	"pe":             sortByPriceToEarnings,
+	"pb":             sortByPriceToBook,
 }
 
 func sortByTicker(quotes []Quote, positions map[string]Position) []Quote {
@@ -124,6 +126,46 @@ func sortByPriceToEarnings(q []Quote, positions map[string]Position) []Quote {
 		From(q).
 		OrderBy(func(v Quote) float64 {
 			return v.TrailingPE
+		}, false).
+		Result()
+
+	return (sorted).([]Quote)
+}
+
+func sortByDividendDate(q []Quote, positions map[string]Position) []Quote {
+	if len(q) <= 0 {
+		return q
+	}
+
+	hasDividendDate, noDividendDate, _ := gubrak.
+		From(q).
+		Partition(func(v Quote) bool {
+			return !v.DividendDate.IsZero()
+		}).
+		ResultAndError()
+
+	sorted := gubrak.
+		From(hasDividendDate).
+		OrderBy(func(v Quote) int64 {
+			return v.DividendDate.Unix()
+		}, true)
+
+	result := sorted.
+		Concat(noDividendDate).
+		Result()
+
+	return (result).([]Quote)
+}
+
+func sortByDividendYield(q []Quote, positions map[string]Position) []Quote {
+	if len(q) <= 0 {
+		return q
+	}
+
+	sorted := gubrak.
+		From(q).
+		OrderBy(func(v Quote) float64 {
+			return v.DividendYield
 		}, false).
 		Result()
 
