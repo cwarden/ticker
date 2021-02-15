@@ -67,6 +67,13 @@ func (m Model) Sort(quotes []Quote, positions map[string]Position) []Quote {
 	return m.Sorter.Sort(m.Quotes, m.Positions)
 }
 
+func (m Model) TogglePositionVisibility() {
+	for i, p := range m.Positions {
+		p.Hidden = !p.Hidden
+		m.Positions[i] = p
+	}
+}
+
 func separator(isSeparated bool, width int) string {
 	if isSeparated {
 		return "\n" + Line(
@@ -95,7 +102,7 @@ func item(q Quote, p Position, width int) string {
 			},
 			Cell{
 				Width: 25,
-				Text:  ValueText(p.Value),
+				Text:  positionValue(p),
 				Align: RightAlign,
 			},
 			Cell{
@@ -111,7 +118,7 @@ func item(q Quote, p Position, width int) string {
 			},
 			Cell{
 				Width: 25,
-				Text:  valueChangeText(p.TotalChange, p.TotalChangePercent),
+				Text:  positionChange(p),
 				Align: RightAlign,
 			},
 			Cell{
@@ -121,6 +128,20 @@ func item(q Quote, p Position, width int) string {
 			},
 		),
 	)
+}
+
+func positionValue(p Position) string {
+	if p.Hidden {
+		return ""
+	}
+	return ValueText(p.Value)
+}
+
+func positionChange(p Position) string {
+	if p.Hidden {
+		return ""
+	}
+	return valueChangeText(p.TotalChange, p.TotalChangePercent)
 }
 
 func extraInfoExchange(show bool, q Quote, width int) string {

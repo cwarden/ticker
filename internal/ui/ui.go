@@ -109,6 +109,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "H":
+			m.watchlist.TogglePositionVisibility()
+			m.viewport.SetContent(m.watchlist.View())
 		case "t", "c", "e", "b", "p", "d", "y":
 			m.watchlist.Sorter = sorter.NewSorter(sorters[msg.String()])
 			m.viewport.SetContent(m.watchlist.View())

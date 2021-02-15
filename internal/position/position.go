@@ -13,6 +13,7 @@ type Position struct {
 	DayChangePercent   float64
 	TotalChange        float64
 	TotalChangePercent float64
+	Hidden             bool
 }
 
 type PositionSummary struct {
