@@ -1,6 +1,9 @@
 package sorter
 
 import (
+	"reflect"
+	"sort"
+
 	. "github.com/achannarasappa/ticker/internal/position"
 	. "github.com/achannarasappa/ticker/internal/quote"
 
@@ -10,16 +13,19 @@ import (
 type sortFunction func(quotes []Quote, positions map[string]Position) []Quote
 
 type Sorter struct {
-	fn      sortFunction
-	Reverse bool
+	fn          sortFunction
+	Reverse     bool
+	Description string
 }
 
 func NewSorter(sort string) Sorter {
 	s := Sorter{}
 	if sorter, ok := sortDict[sort]; ok {
 		s.fn = sorter
+		s.Description = sort
 	} else {
 		s.fn = sortByChange
+		s.Description = "change"
 	}
 	return s
 }
@@ -32,14 +38,24 @@ func (s Sorter) Sort(quotes []Quote, positions map[string]Position) []Quote {
 	return q
 }
 
+func (s Sorter) NextSorter() Sorter {
+	keys := sortKeys()
+	for i, sort := range keys {
+		if reflect.ValueOf(s.fn).Pointer() == reflect.ValueOf(sortDict[sort]).Pointer() && i < len(keys)-1 {
+			return NewSorter(keys[i+1])
+		}
+	}
+	return NewSorter(keys[0])
+}
+
 var sortDict = map[string]sortFunction{
 	"alpha":          sortByTicker,
-	"value":          sortByValue,
 	"change":         sortByChange,
-	"dividend-date":  sortByDividendDate,
-	"dividend-yield": sortByDividendYield,
-	"pe":             sortByPriceToEarnings,
+	"dividend date":  sortByDividendDate,
+	"dividend yield": sortByDividendYield,
 	"pb":             sortByPriceToBook,
+	"pe":             sortByPriceToEarnings,
+	"value":          sortByValue,
 }
 
 func sortByTicker(quotes []Quote, positions map[string]Position) []Quote {
@@ -181,4 +197,15 @@ func splitActiveQuotes(quotes []Quote) (interface{}, interface{}) {
 		ResultAndError()
 
 	return activeQuotes, inactiveQuotes
+}
+
+func sortKeys() []string {
+	keys := make([]string, len(sortDict))
+	i := 0
+	for k := range sortDict {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return keys
 }

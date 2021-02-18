@@ -67,6 +67,10 @@ func (m Model) Sort(quotes []Quote, positions map[string]Position) []Quote {
 	return m.Sorter.Sort(m.Quotes, m.Positions)
 }
 
+func (m *Model) NextSorter() {
+	m.Sorter = m.Sorter.NextSorter()
+}
+
 func (m Model) TogglePositionVisibility() {
 	for i, p := range m.Positions {
 		p.Hidden = !p.Hidden

@@ -95,16 +95,6 @@ type QuoteMsg struct {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
-	sorters := map[string]string{
-		"t": "alpha",
-		"c": "change",
-		"e": "pe",
-		"p": "value",
-		"d": "dividend-date",
-		"y": "dividend-yield",
-		"b": "pb",
-	}
-
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
@@ -112,8 +102,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "H":
 			m.watchlist.TogglePositionVisibility()
 			m.viewport.SetContent(m.watchlist.View())
-		case "t", "c", "e", "b", "p", "d", "y":
-			m.watchlist.Sorter = sorter.NewSorter(sorters[msg.String()])
+		case "s":
+			m.watchlist.NextSorter()
 			m.viewport.SetContent(m.watchlist.View())
 		case "r":
 			m.watchlist.Sorter.Reverse = !m.watchlist.Sorter.Reverse
@@ -168,16 +158,21 @@ func (m Model) View() string {
 		[]string{
 			m.summary.View(),
 			m.viewport.View(),
-			footer(m.viewport.Width, m.lastUpdateTime),
+			footer(m.viewport.Width, m.lastUpdateTime, m.watchlist.Sorter),
 		},
 		"\n",
 	)
 }
 
-func footer(width int, time string) string {
+func footer(width int, time string, sort sorter.Sorter) string {
 
 	if width < 80 {
 		return styleLogo(" ticker ")
+	}
+
+	sortDescription := sort.Description
+	if sort.Reverse {
+		sortDescription += " reverse"
 	}
 
 	return Line(
@@ -187,8 +182,13 @@ func footer(width int, time string) string {
 			Text:  styleLogo(" ticker "),
 		},
 		Cell{
-			Width: 36,
-			Text:  styleHelp("q: exit ↑: scroll up ↓: scroll down"),
+			Width: 65,
+			Text:  styleHelp("q: exit ↑: scroll up ↓: scroll down s: change sort r: reverse"),
+		},
+		Cell{
+			Width: 40,
+			Text:  styleHelp("Sorted by: " + sortDescription),
+			Align: RightAlign,
 		},
 		Cell{
 			Text:  styleHelp("⟳  " + time),
